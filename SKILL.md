@@ -1,3 +1,10 @@
+---
+name: god-mode
+description: Developer oversight and AI agent coaching. Use when viewing project status across repos, syncing GitHub data, or analyzing agents.md against commit patterns.
+metadata: {"openclaw": {"requires": {"bins": ["gh", "sqlite3", "jq"]}}}
+user-invocable: true
+---
+
 # god-mode Skill
 
 > Developer oversight and AI agent coaching for OpenClaw.
