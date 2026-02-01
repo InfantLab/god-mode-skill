@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2026-02-01
 
+**🎉 Published on ClawHub:** https://www.clawhub.ai/InfantLab/god-mode
+
 ### Added
 - Multi-project status overview with activity-based sorting
 - Incremental sync with SQLite cache (90-day window)

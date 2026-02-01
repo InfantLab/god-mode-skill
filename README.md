@@ -2,8 +2,9 @@
 
 > 🔭 God's eye view of your dev repos. Multi-project tracking across GitHub/Azure DevOps. AI learns from your commits to upgrade your agents.md.
 
-[![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-blue)](https://clawdhub.com)
+[![ClawHub](https://img.shields.io/badge/ClawHub-v0.1.0-blue)](https://www.clawhub.ai/InfantLab/god-mode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/InfantLab/god-mode-skill)](https://github.com/InfantLab/god-mode-skill/releases)
 
 ## What is this?
 
@@ -60,24 +61,27 @@ Testing (not mentioned)
 - `sqlite3` - Usually pre-installed
 - `jq` - `brew install jq` or `apt install jq`
 
-### Install
+### Install via ClawHub (Recommended)
 
 ```bash
-# Clone
+# OpenClaw will auto-install when you use it
+# Or manually via ClawHub: https://www.clawhub.ai/InfantLab/god-mode
+```
+
+### Install from GitHub
+
+```bash
+# Quick install
+curl -fsSL https://raw.githubusercontent.com/InfantLab/god-mode-skill/main/install.sh | bash
+
+# Or clone manually
 git clone https://github.com/InfantLab/god-mode-skill
 cd god-mode-skill
-
-# Add to PATH
-echo 'export PATH="$PATH:'$(pwd)'/scripts"' >> ~/.bashrc
-source ~/.bashrc
+chmod +x scripts/god
+ln -s $(pwd)/scripts/god ~/.local/bin/god
 
 # Setup
 god setup
-```
-
-Or for OpenClaw:
-```bash
-openclaw skills add god-mode
 ```
 
 ## Quick Start
