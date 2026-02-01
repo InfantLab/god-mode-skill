@@ -99,19 +99,22 @@ show_project_detail() {
     esac
     echo ""
 
-    # Stats
+    # Stats (weekly)
     local stats=$(db_get_commit_stats "$project_id" 7)
     local commit_count=$(echo "$stats" | jq -r '.[0].commit_count // 0')
     local author_count=$(echo "$stats" | jq -r '.[0].author_count // 0')
-    local last_commit=$(echo "$stats" | jq -r '.[0].last_commit // 0')
+
+    # Get last commit info (no date filter)
+    local last_commit_info=$(db_get_last_commit "$project_id")
+    local last_commit_ts=$(echo "$last_commit_info" | jq -r '.last_commit // 0')
 
     echo -e "${BOLD}This Week${RESET}"
     echo -e "  Commits: ${GREEN}$commit_count${RESET}"
     echo -e "  Authors: $author_count"
-    if [[ "$last_commit" != "0" && "$last_commit" != "null" ]]; then
-        echo -e "  Last activity: $(relative_time "$last_commit")"
+    if [[ "$last_commit_ts" != "0" && "$last_commit_ts" != "null" ]]; then
+        echo -e "  Last activity: $(relative_time "$last_commit_ts")"
     else
-        echo -e "  Last activity: ${DIM}No data${RESET}"
+        echo -e "  Last activity: ${DIM}No commits synced${RESET}"
     fi
     echo ""
 
@@ -141,7 +144,7 @@ show_project_detail() {
     fi
     echo ""
 
-    # Recent commits
+    # Recent commits (7 days, or last 5 if none this week)
     local commits=$(db_get_commits "$project_id" 7)
     local recent_count=$(echo "$commits" | jq 'length')
 
@@ -149,7 +152,15 @@ show_project_detail() {
     if [[ "$recent_count" -gt 0 ]]; then
         echo "$commits" | jq -r '.[0:5] | .[] | "  \(.sha[0:7]) \(.message | split("\n")[0] | .[0:50])"'
     else
-        echo -e "  ${DIM}None in last 7 days${RESET}"
+        # No commits in past 7 days - show last 5 from past 30 days
+        local older_commits=$(db_get_commits "$project_id" 30)
+        local older_count=$(echo "$older_commits" | jq 'length')
+        if [[ "$older_count" -gt 0 ]]; then
+            echo -e "  ${DIM}(No commits this week - showing recent)${RESET}"
+            echo "$older_commits" | jq -r '.[0:5] | .[] | "  \(.sha[0:7]) \(.message | split("\n")[0] | .[0:50])"'
+        else
+            echo -e "  ${DIM}No commits in last 30 days${RESET}"
+        fi
     fi
 }
 
@@ -253,7 +264,11 @@ show_overview() {
         # Get stats from database
         local stats=$(db_get_commit_stats "$project_id" 7)
         local commit_count=$(echo "$stats" | jq -r '.[0].commit_count // 0')
-        local last_commit=$(echo "$stats" | jq -r '.[0].last_commit // 0')
+
+        # Get last commit separately (no date filter) for display
+        local last_commit_info=$(db_get_last_commit "$project_id")
+        local last_commit_ts=$(echo "$last_commit_info" | jq -r '.last_commit // 0')
+        local last_commit_msg=$(echo "$last_commit_info" | jq -r '.message // ""' | head -1 | cut -c1-40)
 
         local prs=$(db_get_open_prs "$project_id")
         local pr_count=$(echo "$prs" | jq 'length')
@@ -261,11 +276,11 @@ show_overview() {
         local issues=$(db_get_open_issues "$project_id")
         local issue_count=$(echo "$issues" | jq 'length')
 
-        # Check if stale
+        # Check if stale (using actual last commit, not 7-day window)
         local is_stale=false
         local warning=""
-        if [[ "$last_commit" != "0" && "$last_commit" != "null" ]]; then
-            local age=$((now - last_commit))
+        if [[ "$last_commit_ts" != "0" && "$last_commit_ts" != "null" ]]; then
+            local age=$((now - last_commit_ts))
             if [[ $age -gt $stale_threshold ]]; then
                 is_stale=true
                 warning="stale"
@@ -280,12 +295,11 @@ show_overview() {
 
         echo -e "${BOLD}${name_display}${RESET}"
 
-        # Last activity
-        if [[ "$last_commit" != "0" && "$last_commit" != "null" ]]; then
-            local last_msg=$(db_query "SELECT message FROM commits WHERE project_id='$project_id' ORDER BY timestamp DESC LIMIT 1" | jq -r '.[0].message // ""' | head -1 | cut -c1-40)
-            echo -e "  Last: $(relative_time "$last_commit") • ${DIM}${last_msg}${RESET}"
+        # Last activity (now shows even if >7 days old)
+        if [[ "$last_commit_ts" != "0" && "$last_commit_ts" != "null" ]]; then
+            echo -e "  Last: $(relative_time "$last_commit_ts") • ${DIM}${last_commit_msg}${RESET}"
         else
-            echo -e "  Last: ${DIM}No activity synced${RESET}"
+            echo -e "  Last: ${DIM}No commits synced${RESET}"
         fi
 
         # Weekly stats

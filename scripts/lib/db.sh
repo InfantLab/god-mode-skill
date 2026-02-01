@@ -125,7 +125,7 @@ db_get_commits() {
               ORDER BY timestamp DESC"
 }
 
-# Get commit stats for a project
+# Get commit stats for a project (within time window)
 db_get_commit_stats() {
     local project_id="$1"
     local days="${2:-7}"
@@ -137,6 +137,19 @@ db_get_commit_stats() {
                 MAX(timestamp) as last_commit
               FROM commits 
               WHERE project_id = '$project_id' AND timestamp > $since"
+}
+
+# Get last commit info (no date filter - for display purposes)
+db_get_last_commit() {
+    local project_id="$1"
+    
+    db_query "SELECT 
+                timestamp as last_commit,
+                message
+              FROM commits 
+              WHERE project_id = '$project_id'
+              ORDER BY timestamp DESC
+              LIMIT 1" | jq '.[0] // null'
 }
 
 # Get open PRs for a project

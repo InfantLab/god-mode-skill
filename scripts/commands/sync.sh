@@ -204,12 +204,32 @@ echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
         PR_AUTHOR=$(echo "$pr" | jq -r '.author // "unknown"')
         PR_CREATED=$(echo "$pr" | jq -r '.created_at')
         PR_UPDATED=$(echo "$pr" | jq -r '.updated_at')
+        PR_MERGED=$(echo "$pr" | jq -r '.merged_at // "null"')
         PR_LABELS=$(echo "$pr" | jq -c '.labels // []')
+        
+        # Convert ISO timestamps to Unix epoch
+        if [[ "$PR_CREATED" =~ ^[0-9]{4}- ]]; then
+            PR_CREATED=$(date -d "$PR_CREATED" +%s 2>/dev/null || echo "NULL")
+        elif [[ "$PR_CREATED" == "null" ]]; then
+            PR_CREATED="NULL"
+        fi
+        
+        if [[ "$PR_UPDATED" =~ ^[0-9]{4}- ]]; then
+            PR_UPDATED=$(date -d "$PR_UPDATED" +%s 2>/dev/null || echo "NULL")
+        elif [[ "$PR_UPDATED" == "null" ]]; then
+            PR_UPDATED="NULL"
+        fi
+        
+        if [[ "$PR_MERGED" =~ ^[0-9]{4}- ]]; then
+            PR_MERGED=$(date -d "$PR_MERGED" +%s 2>/dev/null || echo "NULL")
+        else
+            PR_MERGED="NULL"
+        fi
 
         db_exec "INSERT OR REPLACE INTO pull_requests
-                 (id, project_id, number, title, state, author, created_at, updated_at, labels)
+                 (id, project_id, number, title, state, author, created_at, updated_at, merged_at, labels)
                  VALUES ('${PROJECT_ID}:pr:${PR_NUM}', '$PROJECT_ID', $PR_NUM, '$PR_TITLE',
-                         '$PR_STATE', '$PR_AUTHOR', '$PR_CREATED', '$PR_UPDATED', '$PR_LABELS');"
+                         '$PR_STATE', '$PR_AUTHOR', $PR_CREATED, $PR_UPDATED, $PR_MERGED, '$PR_LABELS');"
     done
     PRS_TOTAL=$((PRS_TOTAL + PR_COUNT))
 
@@ -236,11 +256,24 @@ echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
         ISSUE_CREATED=$(echo "$issue" | jq -r '.created_at')
         ISSUE_UPDATED=$(echo "$issue" | jq -r '.updated_at')
         ISSUE_LABELS=$(echo "$issue" | jq -c '.labels // []')
+        
+        # Convert ISO timestamps to Unix epoch
+        if [[ "$ISSUE_CREATED" =~ ^[0-9]{4}- ]]; then
+            ISSUE_CREATED=$(date -d "$ISSUE_CREATED" +%s 2>/dev/null || echo "NULL")
+        elif [[ "$ISSUE_CREATED" == "null" ]]; then
+            ISSUE_CREATED="NULL"
+        fi
+        
+        if [[ "$ISSUE_UPDATED" =~ ^[0-9]{4}- ]]; then
+            ISSUE_UPDATED=$(date -d "$ISSUE_UPDATED" +%s 2>/dev/null || echo "NULL")
+        elif [[ "$ISSUE_UPDATED" == "null" ]]; then
+            ISSUE_UPDATED="NULL"
+        fi
 
         db_exec "INSERT OR REPLACE INTO issues
                  (id, project_id, number, title, state, author, assignee, created_at, updated_at, labels)
                  VALUES ('${PROJECT_ID}:issue:${ISSUE_NUM}', '$PROJECT_ID', $ISSUE_NUM, '$ISSUE_TITLE',
-                         '$ISSUE_STATE', '$ISSUE_AUTHOR', '$ISSUE_ASSIGNEE', '$ISSUE_CREATED', '$ISSUE_UPDATED', '$ISSUE_LABELS');"
+                         '$ISSUE_STATE', '$ISSUE_AUTHOR', '$ISSUE_ASSIGNEE', $ISSUE_CREATED, $ISSUE_UPDATED, '$ISSUE_LABELS');"
     done
     ISSUES_TOTAL=$((ISSUES_TOTAL + ISSUE_COUNT))
 
