@@ -14,29 +14,72 @@ user-invocable: true
 **god-mode** gives you a bird's-eye view of all your coding projects and coaches you to write better AI agent instructions.
 
 **Key features:**
-- Multi-project status dashboard
-- Incremental sync from GitHub (Azure/GitLab coming)
-- Agent instruction analysis based on commit patterns
-- Local SQLite cache for fast queries
+- Multi-project status dashboard (GitHub + Azure DevOps)
+- Incremental sync with SQLite cache for fast queries
+- LLM-powered agent instruction analysis
+- Activity logging for transparency
 
-## Quick Start
+**Perfect for:**
+- Developers juggling multiple repos
+- Teams using AI coding assistants (Claude, Copilot, etc.)
+- Anyone who wants better AGENTS.md based on actual commit patterns
+
+## Getting Started
+
+### Prerequisites
+
+1. **GitHub CLI** - `gh` must be installed and authenticated
+   ```bash
+   gh auth login  # If not already logged in
+   ```
+
+2. **Your repositories** - At least one repo with commit history
+
+3. **(Optional) AGENTS.md** - For agent analysis feature
+
+### First-Time Setup
 
 ```bash
-# First-run setup
+# Run setup (checks dependencies, creates directories)
 god setup
 
-# Add a project
-god projects add github:myuser/myrepo
+# Add your first project (replace with your repo)
+god projects add github:yourusername/yourrepo
 
-# Sync data
+# Sync data (fetches commits, PRs, issues)
 god sync
 
-# See overview
+# See your project status
 god status
-
-# Analyze your agents.md
-god agents analyze myrepo
 ```
+
+**Expected output:**
+```
+🔭 god-mode
+
+github:yourusername/yourrepo
+  Last: 2h ago • feat: add new feature
+  This week: 15 commits • 2 PRs • 3 issues
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This week: 15 commits • 2 open PRs
+```
+
+### Using in OpenClaw
+
+When running god-mode commands in OpenClaw, I (your OpenClaw agent) can:
+- Help you set up projects
+- Explain the analysis results
+- Provide the LLM analysis for `god agents analyze`
+- Guide you through applying recommendations
+
+**Typical workflow in OpenClaw:**
+1. You: "Set up god-mode for my tada repo"
+2. Me: Runs `god projects add github:InfantLab/tada` and `god sync`
+3. You: "Analyze my agents.md"
+4. Me: Runs `god agents analyze`, shows you the prompt, provides JSON analysis
+5. You: Decide which recommendations to apply
+6. Me: Helps apply them to your AGENTS.md
 
 ## Commands
 
@@ -91,30 +134,50 @@ god-mode automatically detects and uses the best available LLM:
 - You (or your agent) provides the JSON analysis directly in the conversation
 - Much simpler than managing separate API keys!
 
-**Interactive Workflow:**
+**OpenClaw Workflow:**
+
+When you run `god agents analyze` in OpenClaw:
+
+1. **Analysis starts:**
+   ```
+   🔭 Analyzing github:InfantLab/tada
+   ✅ Found AGENTS.md (remote)
+   ✅ 155 commits analyzed
+   🤖 Using OpenClaw's LLM
+   ```
+
+2. **I (OpenClaw agent) receive the analysis prompt** showing:
+   - Your complete AGENTS.md content
+   - Commit pattern summary (45 features, 68 bug fixes, etc.)
+   - Most changed files/directories
+   - Pain points and commit samples
+
+3. **I analyze and provide JSON response:**
+   ```json
+   {
+     "gaps": [
+       {
+         "area": "Testing",
+         "observation": "68 bug fixes but no testing guidance in AGENTS.md",
+         "impact": "high",
+         "suggestion": "Add testing section with coverage targets"
+       }
+     ],
+     "strengths": [...],
+     "recommendations": [...]
+   }
+   ```
+
+4. **god-mode displays results** and offers to apply changes to your AGENTS.md
+
+5. **You choose** which recommendations to accept, and god-mode updates the file
+
+**Standalone Workflow (outside OpenClaw):**
+
+If you set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`, god-mode calls the API directly:
 ```bash
-god agents analyze myproject
-
-🔭 Analyzing myproject
-✅ Found AGENTS.md
-✅ 155 commits analyzed
-🤖 Analyzing with Anthropic (Claude 3.5 Sonnet)... Done
-
-⚠️ GAPS FOUND (3)
-
-1. Testing practices (high impact)
-   → 68 bug fix commits but no testing guidance
-   → Add testing section with coverage targets
-
-2. Voice API debugging (medium impact)
-   → 12 commits mention "voice" but no troubleshooting tips
-
-Apply recommendations to AGENTS.md? (y/N): y
-Select recommendations (e.g., 1,3 or 'a' for all): 1,2
-
-✅ Applied 2 recommendations
-Commit changes? (Y/n): y
-✅ Committed and pushed
+export ANTHROPIC_API_KEY="sk-ant-..."
+god agents analyze myproject  # Fully automated
 ```
 
 ### `god agents generate <project>` (Coming Soon)
@@ -230,6 +293,26 @@ task: |
   If gaps found, notify with suggestions.
 ```
 
+## Common Questions
+
+### How do I know if god-mode is working?
+Run `god status` - if you see project data, it's working! If you see "No projects configured", run `god projects add github:your/repo` first.
+
+### Do I need an API key to use god agents analyze?
+No! When running in OpenClaw, the analysis prompt is shown to your OpenClaw agent (me), and I provide the analysis. No separate API key needed.
+
+### Can I use this outside OpenClaw?
+Yes! god-mode works standalone. Just set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` for automated LLM analysis, or use it without API keys to get the analysis prompt only.
+
+### How often should I sync?
+Run `god sync` when you want fresh data. The first sync fetches 90 days of commits. Subsequent syncs are incremental (only new data).
+
+### What gets stored locally?
+Everything! Commits, PRs, issues, and analysis results are cached in `~/.god-mode/cache.db`. Activity logs in `~/.god-mode/logs/activity.log`. Nothing is sent to external servers (except the LLM API call if you use one).
+
+### Can I use this for private repos?
+Yes! god-mode uses your `gh` CLI authentication, so it has access to whatever your GitHub account can access.
+
 ## Troubleshooting
 
 ### "gh: command not found"
@@ -243,6 +326,9 @@ Add a project: `god projects add github:user/repo`
 
 ### Stale data
 Force refresh: `god sync --force`
+
+### Agent analysis returns empty {}
+This is normal in OpenClaw mode - the prompt is displayed for the OpenClaw agent to analyze. The agent provides the JSON response in conversation, not as return value.
 
 ---
 
