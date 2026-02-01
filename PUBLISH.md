@@ -24,20 +24,21 @@ gh release create v0.1.0 \
   --notes "See CHANGELOG.md for details"
 ```
 
-### 2. Submit to ClawdHub
+### 2. Submit to ClawHub
 
 **Via Web:**
-1. Go to https://clawdhub.com
-2. Click "Submit Skill" or "Publish"
+1. Go to https://www.clawhub.ai/
+2. Click "Submit Skill" or "Publish" (look for contribution/submit option)
 3. Enter repository URL: `https://github.com/InfantLab/god-mode-skill`
-4. ClawdHub will validate SKILL.md metadata
+4. ClawHub will validate SKILL.md metadata
 5. Approve and publish
 
-**Via CLI (if available):**
-```bash
-npm install -g clawdhub
-clawdhub publish /home/caddy/god-mode-skill
-```
+**Note:** Site may show security warnings - this is a known issue with the platform.
+
+**If submission UI isn't available:**
+- Join Discord: https://discord.com/invite/clawd
+- Post in #skills with your GitHub URL
+- OpenClaw team can manually add it
 
 ### 3. Announce
 
