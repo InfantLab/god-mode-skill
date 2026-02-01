@@ -13,6 +13,8 @@ source "$LIB_DIR/output.sh"
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/db.sh"
 source "$LIB_DIR/logging.sh"
+source "$LIB_DIR/llm.sh"
+source "$LIB_DIR/apply.sh"
 source "$LIB_DIR/analysis/patterns.sh"
 source "$LIB_DIR/analysis/agents.sh"
 
@@ -170,23 +172,70 @@ analyze_project() {
     prompt="${prompt//\{\{ repeated_patterns \}\}/See topics above}"
     prompt="${prompt//\{\{ commit_samples \}\}/$commit_samples}"
 
-    # Output the prompt for the LLM (OpenClaw will handle the actual LLM call)
-    if [[ "$json_output" != "true" ]]; then
-        echo ""
-        divider
-        echo ""
-        echo "## Analysis Request"
-        echo ""
-        echo "The following prompt should be sent to an LLM for analysis."
-        echo "In OpenClaw, this will be handled automatically."
-        echo ""
-        divider
+    # Check if LLM is available
+    if ! llm_available; then
+        if [[ "$json_output" != "true" ]]; then
+            echo ""
+            divider
+            echo ""
+            warn "No LLM configured - outputting prompt for manual processing"
+            echo ""
+            echo "Set one of these environment variables to enable automatic analysis:"
+            echo "  - ANTHROPIC_API_KEY (Claude)"
+            echo "  - OPENAI_API_KEY (GPT)"
+            echo "  - OPENROUTER_API_KEY (Multiple models)"
+            echo ""
+            divider
+            echo ""
+        fi
+        echo "$prompt"
+        store_agent_snapshot "$project_id" "$agent_path" "$agent_content"
+        log_analysis_complete "$project_id" "agent_gaps" "false"
+        return 0
     fi
 
-    # For now, output the prompt so OpenClaw/user can process it
-    # In a full integration, this would call the LLM directly
-    echo ""
-    echo "$prompt"
+    # Call LLM
+    if [[ "$json_output" != "true" ]]; then
+        echo ""
+        echo -n "🤖 Analyzing with $(llm_info)... "
+    fi
+
+    local llm_response
+    llm_response=$(llm_call "$prompt")
+
+    if [[ "$json_output" != "true" ]]; then
+        success "Done"
+        echo ""
+    fi
+
+    # Validate JSON response
+    if ! echo "$llm_response" | jq . &>/dev/null; then
+        error "Invalid JSON response from LLM"
+        if [[ "$json_output" == "true" ]]; then
+            echo '{"error": "Invalid LLM response"}'
+        else
+            echo "$llm_response"
+        fi
+        return 1
+    fi
+
+    # Cache the result
+    db_cache_analysis "$project_id" "agent_gaps" "$llm_response" 604800 "$content_hash"
+
+    # Display or output results
+    if [[ "$json_output" == "true" ]]; then
+        echo "$llm_response"
+    else
+        display_analysis "$llm_response"
+        
+        # Prompt to apply recommendations
+        echo ""
+        read -p "Apply recommendations to AGENTS.md? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            apply_recommendations "$project_id" "$agent_path" "$agent_content" "$llm_response"
+        fi
+    fi
 
     # Store agent snapshot
     store_agent_snapshot "$project_id" "$agent_path" "$agent_content"

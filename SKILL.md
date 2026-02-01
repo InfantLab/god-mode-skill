@@ -64,12 +64,54 @@ god projects remove myproject       # Remove project
 ```
 
 ### `god agents analyze <project>`
-Analyze agents.md against commit history:
+Analyze agents.md against commit history using LLM:
 ```bash
 god agents analyze myproject
 ```
 
-Finds gaps between your agent instructions and actual work patterns, suggests improvements.
+**What it does:**
+1. Fetches your AGENTS.md from the repository
+2. Analyzes commit patterns (types, pain points, frequently changed files)
+3. Calls an LLM (Claude/GPT) to find gaps and suggest improvements
+4. Displays recommendations interactively
+5. Optionally applies changes to your AGENTS.md
+
+**LLM Configuration:**
+
+Set one of these environment variables to enable automatic analysis:
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."     # Claude (recommended)
+export OPENAI_API_KEY="sk-..."            # GPT-4o
+export OPENROUTER_API_KEY="sk-or-..."    # Multiple models
+```
+
+Without an API key, god-mode outputs the analysis prompt for manual processing.
+
+**Interactive Workflow:**
+```bash
+god agents analyze myproject
+
+🔭 Analyzing myproject
+✅ Found AGENTS.md
+✅ 155 commits analyzed
+🤖 Analyzing with Anthropic (Claude 3.5 Sonnet)... Done
+
+⚠️ GAPS FOUND (3)
+
+1. Testing practices (high impact)
+   → 68 bug fix commits but no testing guidance
+   → Add testing section with coverage targets
+
+2. Voice API debugging (medium impact)
+   → 12 commits mention "voice" but no troubleshooting tips
+
+Apply recommendations to AGENTS.md? (y/N): y
+Select recommendations (e.g., 1,3 or 'a' for all): 1,2
+
+✅ Applied 2 recommendations
+Commit changes? (Y/n): y
+✅ Committed and pushed
+```
 
 ### `god agents generate <project>` (Coming Soon)
 Bootstrap agents.md for a new project by analyzing repo structure.

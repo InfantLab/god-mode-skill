@@ -150,9 +150,11 @@ Example insights:
 
 ### v0.1.0 (Current)
 - [x] Project status overview
-- [x] GitHub integration via `gh` CLI
+- [x] GitHub + Azure DevOps integration
 - [x] Incremental sync with SQLite cache
-- [x] Agent instruction analysis
+- [x] LLM-powered agent instruction analysis
+- [x] Interactive recommendation application
+- [x] Activity logging for transparency
 
 ### v0.2.0
 - [ ] Context save/restore
@@ -160,9 +162,9 @@ Example insights:
 - [ ] `god agents generate` for new projects
 
 ### v0.3.0
-- [ ] Azure DevOps support
 - [ ] GitLab support
 - [ ] Proactive alerts via OpenClaw heartbeat
+- [ ] Cross-repository insights
 
 ### v1.0.0
 - [ ] Cross-project intelligence
