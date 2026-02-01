@@ -43,15 +43,15 @@ github_fetch_commits() {
     local query="repos/$repo/commits?per_page=100"
     [[ -n "$since" ]] && query="${query}&since=$since"
     
-    gh api "$query" --paginate \
-        --jq '[.[] | {
+    # Use jq to merge all paginated results into single array
+    gh api "$query" --paginate --jq '.[] | {
             sha: .sha,
             author: (.commit.author.name // .author.login // "unknown"),
             author_email: .commit.author.email,
             message: .commit.message,
             date: .commit.author.date,
             files_changed: (.files | length // 0)
-        }]' 2>/dev/null || echo "[]"
+        }' 2>/dev/null | jq -s '.' || echo "[]"
 }
 
 # Fetch pull requests
@@ -61,7 +61,7 @@ github_fetch_prs() {
     local repo="$1"
     local state="${2:-all}"
     
-    gh pr list --repo "$repo" --state "$state" --limit 100 \
+    gh pr list --repo "$repo" --state "$state" --limit 1000 \
         --json number,title,state,author,createdAt,updatedAt,mergedAt,reviewRequests,labels \
         --jq '[.[] | {
             id: ("github:" + "'"$repo"'" + ":" + (.number | tostring)),
