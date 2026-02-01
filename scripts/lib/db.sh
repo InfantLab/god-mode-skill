@@ -20,7 +20,13 @@ db_init() {
 # Usage: db_query "SELECT * FROM projects"
 db_query() {
     local sql="$1"
-    sqlite3 -json "$DB_PATH" "$sql" 2>/dev/null || echo "[]"
+    local result
+    result=$(sqlite3 -json "$DB_PATH" "$sql" 2>/dev/null)
+    if [[ -z "$result" ]]; then
+        echo "[]"
+    else
+        echo "$result"
+    fi
 }
 
 # Run a query that doesn't return data
@@ -137,7 +143,7 @@ db_get_commit_stats() {
 db_get_open_prs() {
     local project_id="$1"
     db_query "SELECT * FROM pull_requests 
-              WHERE project_id = '$project_id' AND state = 'open'
+              WHERE project_id = '$project_id' AND (state = 'open' OR state = 'OPEN' OR state = 'active')
               ORDER BY updated_at DESC"
 }
 

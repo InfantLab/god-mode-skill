@@ -272,10 +272,10 @@ show_overview() {
             echo -e "  Last: ${DIM}No activity synced${RESET}"
         fi
 
-        # PR and issue counts
-        local pr_display="$pr_count open"
-        local issue_display="$issue_count"
-        echo -e "  PRs: ${pr_display} • Issues: ${issue_display}"
+        # Weekly stats
+        local commit_display="${commit_count} commits"
+        [[ "$commit_count" -gt 0 ]] && commit_display="${GREEN}${commit_count}${RESET} commits"
+        echo -e "  This week: ${commit_display} • ${pr_count} PRs • ${issue_count} issues"
         echo ""
 
         total_commits=$((total_commits + commit_count))
