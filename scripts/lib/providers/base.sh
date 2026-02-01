@@ -56,8 +56,8 @@ provider_call() {
 provider_supported() {
     local provider="$1"
     case "$provider" in
-        github) return 0 ;;
-        azure|gitlab) return 1 ;;  # Stubbed, not fully implemented
+        github|azure) return 0 ;;
+        gitlab) return 1 ;;  # Stubbed, not fully implemented
         *) return 1 ;;
     esac
 }

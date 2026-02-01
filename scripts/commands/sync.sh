@@ -12,6 +12,7 @@ source "$LIB_DIR/output.sh"
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/db.sh"
 source "$LIB_DIR/providers/github.sh"
+source "$LIB_DIR/providers/azure.sh"
 
 # Parse arguments
 PROJECT_FILTER=""
@@ -101,17 +102,26 @@ echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
     echo -e "${BOLD}${PROJECT_NAME}${RESET}"
 
     # Check provider support
-    if [[ "$PROVIDER" != "github" ]]; then
+    if [[ "$PROVIDER" != "github" && "$PROVIDER" != "azure" ]]; then
         warn "  Provider '$PROVIDER' not yet supported, skipping"
         continue
     fi
 
-    # Check GitHub auth
-    AUTH=$(github_check_auth)
-    if [[ $(echo "$AUTH" | jq -r '.authenticated') != "true" ]]; then
-        error "  Not authenticated to GitHub. Run: gh auth login"
-        ((ERRORS++)) || true
-        continue
+    # Check auth for provider
+    if [[ "$PROVIDER" == "github" ]]; then
+        AUTH=$(github_check_auth)
+        if [[ $(echo "$AUTH" | jq -r '.authenticated') != "true" ]]; then
+            error "  Not authenticated to GitHub. Run: gh auth login"
+            ((ERRORS++)) || true
+            continue
+        fi
+    elif [[ "$PROVIDER" == "azure" ]]; then
+        AUTH=$(azure_check_auth)
+        if [[ $(echo "$AUTH" | jq -r '.authenticated') != "true" ]]; then
+            error "  Not authenticated to Azure. Run: az login"
+            ((ERRORS++)) || true
+            continue
+        fi
     fi
 
     # Calculate since date
@@ -147,7 +157,13 @@ echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
 
     # Fetch commits
     echo -n "  Fetching commits... "
-    COMMITS=$(github_fetch_commits "$REPO" "$SINCE_DATE" 2>/dev/null || echo "[]")
+    if [[ "$PROVIDER" == "github" ]]; then
+        COMMITS=$(github_fetch_commits "$REPO" "$SINCE_DATE" 2>/dev/null || echo "[]")
+    elif [[ "$PROVIDER" == "azure" ]]; then
+        COMMITS=$(azure_fetch_commits "$REPO" "$SINCE_DATE" 2>/dev/null || echo "[]")
+    else
+        COMMITS="[]"
+    fi
     COMMIT_COUNT=$(echo "$COMMITS" | jq 'length')
     echo -e "${GREEN}${COMMIT_COUNT}${RESET}"
 
@@ -158,9 +174,15 @@ echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
 
     # Fetch PRs
     echo -n "  Fetching PRs... "
-    PRS=$(github_fetch_prs "$REPO" "all" 2>/dev/null || echo "[]")
+    if [[ "$PROVIDER" == "github" ]]; then
+        PRS=$(github_fetch_prs "$REPO" "all" 2>/dev/null || echo "[]")
+    elif [[ "$PROVIDER" == "azure" ]]; then
+        PRS=$(azure_fetch_prs "$REPO" "all" 2>/dev/null || echo "[]")
+    else
+        PRS="[]"
+    fi
     PR_COUNT=$(echo "$PRS" | jq 'length')
-    OPEN_PRS=$(echo "$PRS" | jq '[.[] | select(.state == "OPEN")] | length')
+    OPEN_PRS=$(echo "$PRS" | jq '[.[] | select(.state == "OPEN" or .state == "active")] | length')
     echo -e "${GREEN}${PR_COUNT}${RESET} (${OPEN_PRS} open)"
 
     # Store PRs
@@ -182,7 +204,13 @@ echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
 
     # Fetch issues
     echo -n "  Fetching issues... "
-    ISSUES=$(github_fetch_issues "$REPO" "all" 2>/dev/null || echo "[]")
+    if [[ "$PROVIDER" == "github" ]]; then
+        ISSUES=$(github_fetch_issues "$REPO" "all" 2>/dev/null || echo "[]")
+    elif [[ "$PROVIDER" == "azure" ]]; then
+        ISSUES=$(azure_fetch_issues "$REPO" "all" 2>/dev/null || echo "[]")
+    else
+        ISSUES="[]"
+    fi
     ISSUE_COUNT=$(echo "$ISSUES" | jq 'length')
     OPEN_ISSUES=$(echo "$ISSUES" | jq '[.[] | select(.state == "OPEN" or .state == "open")] | length')
     echo -e "${GREEN}${ISSUE_COUNT}${RESET} (${OPEN_ISSUES} open)"
