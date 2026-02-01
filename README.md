@@ -104,9 +104,12 @@ god agents analyze yourrepo
 | `god status <project>` | Details for one project |
 | `god sync` | Fetch latest data from repos |
 | `god sync --force` | Full refresh (ignore cache) |
+| `god review` | Monthly activity review (last month) |
+| `god review --month YYYY-MM` | Review specific month |
 | `god projects` | List configured projects |
 | `god projects add <uri>` | Add a project |
 | `god agents analyze <project>` | Improve your agents.md |
+| `god logs` | View activity logs |
 
 ## Configuration
 
@@ -139,6 +142,34 @@ Example insights:
 - "40% of commits are error-handling fixes - add error handling guidance"
 - "Your 'use TypeScript strict' instruction is working - 0 type errors"
 
+## Monthly Reviews
+
+Track your progress with automatic monthly summaries:
+
+```bash
+$ god review --month 2026-01
+
+📊 Monthly Review: 2026-01
+
+Total Activity
+  286 commits across 7 projects
+  👥 10 unique contributors
+
+Most Active Projects
+  tada - 155 commits
+  brain - 27 commits
+  
+Pull Requests
+  ✓ 84 merged
+  ◐ 3 active
+```
+
+**Use cases:**
+- Monthly retrospectives
+- Team stand-ups
+- Quarterly planning
+- Automated reports via cron
+
 ## Data & Privacy
 
 - **All data stored locally** in `~/.god-mode/`
@@ -148,27 +179,35 @@ Example insights:
 
 ## Roadmap
 
-### v0.1.0 (Current)
-- [x] Project status overview
+### v0.1.0 (Current) ✅
+- [x] Project status overview (sorted by activity)
 - [x] GitHub + Azure DevOps integration
-- [x] Incremental sync with SQLite cache
+- [x] Incremental sync with SQLite cache (90-day window)
 - [x] LLM-powered agent instruction analysis
+- [x] OpenClaw integration mode
+- [x] Monthly activity reviews
 - [x] Interactive recommendation application
 - [x] Activity logging for transparency
+- [x] JSON output for all commands
 
 ### v0.2.0
 - [ ] Context save/restore
 - [ ] Activity summaries (`god today`, `god week`)
-- [ ] `god agents generate` for new projects
+- [ ] `god agents generate` for bootstrapping new projects
+- [ ] Month-over-month trend analysis
+- [ ] Contributor spotlight in reviews
+- [ ] Agent analysis caching command
 
 ### v0.3.0
 - [ ] GitLab support
 - [ ] Proactive alerts via OpenClaw heartbeat
 - [ ] Cross-repository insights
+- [ ] Health scoring for projects
 
 ### v1.0.0
 - [ ] Cross-project intelligence
 - [ ] Integration ecosystem (Obsidian, etc.)
+- [ ] Multi-team support
 
 ## Contributing
 
