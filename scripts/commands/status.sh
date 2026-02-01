@@ -229,6 +229,22 @@ show_overview() {
     local now=$(date +%s)
     local stale_threshold=$((5 * 86400))  # 5 days
 
+    # Enrich projects with commit stats for sorting
+    local enriched_projects="[]"
+    while read -r project; do
+        local project_id=$(echo "$project" | jq -r '.id')
+        local stats=$(db_get_commit_stats "$project_id" 7)
+        local commit_count=$(echo "$stats" | jq -r '.[0].commit_count // 0')
+        
+        enriched_projects=$(echo "$enriched_projects" | jq --argjson project "$project" \
+            --argjson commits "$commit_count" \
+            '. += [$project + {commits_this_week: $commits}]')
+    done < <(echo "$projects" | jq -c '.[]')
+    
+    # Sort by commits descending, then by name
+    local sorted_projects
+    sorted_projects=$(echo "$enriched_projects" | jq 'sort_by(-.commits_this_week, .name)')
+
     while read -r project; do
         local project_id=$(echo "$project" | jq -r '.id')
         local project_name=$(echo "$project" | jq -r '.name // .id')
@@ -280,7 +296,7 @@ show_overview() {
 
         total_commits=$((total_commits + commit_count))
         total_prs=$((total_prs + pr_count))
-    done < <(echo "$projects" | jq -c '.[]')
+    done < <(echo "$sorted_projects" | jq -c '.[]')
 
     # Summary
     divider
