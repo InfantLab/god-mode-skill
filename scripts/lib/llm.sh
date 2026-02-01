@@ -12,6 +12,9 @@ llm_call() {
     local provider=$(get_llm_provider)
     
     case "$provider" in
+        openclaw)
+            llm_call_openclaw "$prompt" "$model"
+            ;;
         openai)
             llm_call_openai "$prompt" "$model"
             ;;
@@ -28,9 +31,51 @@ llm_call() {
     esac
 }
 
+# Call OpenClaw's built-in LLM (when running as OpenClaw skill)
+llm_call_openclaw() {
+    local prompt="$1"
+    local model="${2:-}"
+    
+    # Write prompt to file for OpenClaw agent to read and analyze
+    local prompt_file="$GOD_MODE_HOME/analysis-prompt.txt"
+    echo "$prompt" > "$prompt_file"
+    
+    # Output the prompt directly - OpenClaw agent will process it
+    cat <<EOF
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 Using OpenClaw's LLM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OpenClaw agent: Please analyze the following prompt and respond with valid JSON.
+
+Prompt saved to: $prompt_file
+
+$prompt
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Required JSON format:
+{
+  "gaps": [{"area": "...", "observation": "...", "impact": "high|medium|low", "suggestion": "..."}],
+  "strengths": [{"area": "...", "observation": "..."}],
+  "recommendations": [{"priority": 1-5, "section": "...", "content": "..."}],
+  "summary": "..."
+}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EOF
+    
+    # For now, return empty - OpenClaw agent provides response in conversation
+    # Future: implement proper async response handling
+    echo '{}'
+}
+
 # Determine which LLM provider to use
 get_llm_provider() {
-    if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+    # Check if running in OpenClaw context first
+    if [[ -n "${OPENCLAW_SERVICE_MARKER:-}" ]]; then
+        echo "openclaw"
+    elif [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
         echo "anthropic"
     elif [[ -n "${OPENAI_API_KEY:-}" ]]; then
         echo "openai"
@@ -136,6 +181,7 @@ llm_available() {
 llm_info() {
     local provider=$(get_llm_provider)
     case "$provider" in
+        openclaw) echo "OpenClaw Agent" ;;
         openai) echo "OpenAI (GPT-4o)" ;;
         anthropic) echo "Anthropic (Claude 3.5 Sonnet)" ;;
         openrouter) echo "OpenRouter" ;;

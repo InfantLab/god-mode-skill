@@ -78,14 +78,18 @@ god agents analyze myproject
 
 **LLM Configuration:**
 
-Set one of these environment variables to enable automatic analysis:
-```bash
-export ANTHROPIC_API_KEY="sk-ant-..."     # Claude (recommended)
-export OPENAI_API_KEY="sk-..."            # GPT-4o
-export OPENROUTER_API_KEY="sk-or-..."    # Multiple models
-```
+god-mode automatically detects and uses the best available LLM:
 
-Without an API key, god-mode outputs the analysis prompt for manual processing.
+1. **OpenClaw (default when running as skill)** - Uses your OpenClaw agent
+2. **Anthropic** - Set `ANTHROPIC_API_KEY="sk-ant-..."`
+3. **OpenAI** - Set `OPENAI_API_KEY="sk-..."`  
+4. **OpenRouter** - Set `OPENROUTER_API_KEY="sk-or-..."`
+5. **Manual** - Outputs prompt if no LLM available
+
+**When running in OpenClaw:**
+- The analysis prompt is displayed to your OpenClaw agent
+- You (or your agent) provides the JSON analysis directly in the conversation
+- Much simpler than managing separate API keys!
 
 **Interactive Workflow:**
 ```bash
