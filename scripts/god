@@ -28,6 +28,7 @@ COMMANDS:
     projects            List and manage configured projects
     agents analyze      Analyze and improve your agents.md
     agents generate     Generate agents.md for a project (coming soon)
+    review              Monthly activity reviews
     logs                View activity logs
     
     setup               First-run setup
@@ -88,6 +89,9 @@ main() {
             ;;
         agents)
             exec "$SCRIPT_DIR/commands/agents.sh" "$@"
+            ;;
+        review)
+            exec "$SCRIPT_DIR/commands/review.sh" "$@"
             ;;
         logs)
             exec "$SCRIPT_DIR/commands/logs.sh" "$@"
