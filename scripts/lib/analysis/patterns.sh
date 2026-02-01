@@ -163,7 +163,8 @@ extract_topics() {
 
     for topic in "${topics[@]}"; do
         local count=$(echo "$commits" | jq -r '.[].message // empty' | \
-            grep -ic "\b${topic}\b" 2>/dev/null || echo "0")
+            grep -ic "\b${topic}\b" 2>/dev/null | wc -l)
+        count=${count:-0}
         if [[ $count -gt 0 ]]; then
             result=$(echo "$result" | jq --arg t "$topic" --argjson c "$count" \
                 '. += [{topic: $t, count: $c}]')

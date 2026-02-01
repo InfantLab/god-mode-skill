@@ -237,12 +237,11 @@ store_agent_snapshot() {
     # Escape content for SQL
     local escaped_content=$(echo "$content" | sed "s/'/''/g")
 
+    # Delete existing entry before inserting new one
+    db_exec "DELETE FROM agent_files WHERE project_id = '$project_id' AND path = '$path';"
+
     db_exec "INSERT INTO agent_files (project_id, path, content_hash, content, captured_at)
-             VALUES ('$project_id', '$path', '$hash', '$escaped_content', $now)
-             ON CONFLICT(project_id, path) DO UPDATE SET
-                 content_hash = '$hash',
-                 content = '$escaped_content',
-                 captured_at = $now;"
+             VALUES ('$project_id', '$path', '$hash', '$escaped_content', $now);"
 
     echo "$hash"
 }

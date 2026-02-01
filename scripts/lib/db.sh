@@ -170,6 +170,9 @@ db_cache_analysis() {
     # Escape JSON for SQL
     result=$(echo "$result" | sed "s/'/''/g")
     
+    # Delete old analysis of same type before inserting new one
+    db_exec "DELETE FROM analyses WHERE project_id = '$project_id' AND type = '$type';"
+    
     db_exec "INSERT INTO analyses (project_id, type, input_hash, result, created_at, valid_until)
              VALUES ('$project_id', '$type', '$input_hash', '$result', $now, $valid_until);"
 }
