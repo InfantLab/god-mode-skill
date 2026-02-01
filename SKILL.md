@@ -74,6 +74,18 @@ Finds gaps between your agent instructions and actual work patterns, suggests im
 ### `god agents generate <project>` (Coming Soon)
 Bootstrap agents.md for a new project by analyzing repo structure.
 
+### `god logs [options]`
+View activity logs:
+```bash
+god logs                # Last 50 lines
+god logs -n 100         # Last 100 lines
+god logs -f             # Follow log output
+god logs --path         # Show log file location
+god logs --clear        # Clear all logs
+```
+
+All god-mode activity is logged to `~/.god-mode/logs/activity.log` with timestamps for transparency and debugging.
+
 ## Configuration
 
 Config file: `~/.config/god-mode/config.yaml`

@@ -11,6 +11,7 @@ LIB_DIR="$SCRIPT_DIR/../lib"
 source "$LIB_DIR/output.sh"
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/db.sh"
+source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/providers/github.sh"
 source "$LIB_DIR/providers/azure.sh"
 
@@ -86,6 +87,13 @@ fi
 
 header "Syncing Projects"
 
+# Log sync command
+if [[ -n "$PROJECT_FILTER" ]]; then
+    log_command "sync" "$PROJECT_FILTER"
+else
+    log_command "sync" "all projects"
+fi
+
 SYNCED=0
 COMMITS_TOTAL=0
 PRS_TOTAL=0
@@ -100,6 +108,9 @@ echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
     REPO=$(config_parse_repo "$PROJECT_ID")
 
     echo -e "${BOLD}${PROJECT_NAME}${RESET}"
+    
+    # Log sync start
+    log_sync_start "$PROJECT_ID"
 
     # Check provider support
     if [[ "$PROVIDER" != "github" && "$PROVIDER" != "azure" ]]; then
@@ -237,6 +248,9 @@ echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
     db_set_sync_state "$PROJECT_ID" "commits_synced_at" "$NOW"
     db_set_sync_state "$PROJECT_ID" "prs_synced_at" "$NOW"
     db_set_sync_state "$PROJECT_ID" "issues_synced_at" "$NOW"
+    
+    # Log sync complete
+    log_sync_complete "$PROJECT_ID" "$COMMIT_COUNT" "$PR_COUNT" "$ISSUE_COUNT"
 
     ((SYNCED++)) || true
     echo ""

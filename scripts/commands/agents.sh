@@ -12,6 +12,7 @@ PROMPTS_DIR="$SCRIPT_DIR/../../prompts"
 source "$LIB_DIR/output.sh"
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/db.sh"
+source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/analysis/patterns.sh"
 source "$LIB_DIR/analysis/agents.sh"
 
@@ -58,6 +59,9 @@ analyze_project() {
     if [[ "$json_output" != "true" ]]; then
         header "Analyzing $project_name"
     fi
+    
+    # Log analysis start
+    log_analysis_start "$project_id" "agent_gaps"
 
     # Get agent file content
     if [[ "$json_output" != "true" ]]; then
@@ -92,6 +96,7 @@ analyze_project() {
     if [[ "$force" != "true" ]]; then
         local cached=$(db_get_cached_analysis "$project_id" "agent_gaps" "$content_hash")
         if [[ -n "$cached" ]]; then
+            log_analysis_complete "$project_id" "agent_gaps" "true"
             if [[ "$json_output" == "true" ]]; then
                 echo "$cached"
             else
@@ -185,6 +190,9 @@ analyze_project() {
 
     # Store agent snapshot
     store_agent_snapshot "$project_id" "$agent_path" "$agent_content"
+    
+    # Log analysis complete
+    log_analysis_complete "$project_id" "agent_gaps" "false"
 }
 
 # Show agent file content
