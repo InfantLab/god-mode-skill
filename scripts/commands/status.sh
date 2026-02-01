@@ -56,20 +56,6 @@ done
 # Initialize database (creates if not exists)
 db_init
 
-# Get projects
-if [[ -n "$PROJECT_FILTER" ]]; then
-    # Single project detail view
-    PROJECT=$(config_get_project "$PROJECT_FILTER")
-    if [[ -z "$PROJECT" || "$PROJECT" == "null" ]]; then
-        error "Project not found: $PROJECT_FILTER"
-        exit 1
-    fi
-    show_project_detail "$PROJECT"
-else
-    # Multi-project overview
-    show_overview
-fi
-
 # Show detailed view for a single project
 show_project_detail() {
     local project="$1"
@@ -299,7 +285,9 @@ show_overview() {
     # Summary
     divider
     echo -e "This week: ${GREEN}$total_commits commits${RESET} • $total_prs open PRs"
-    [[ $stale_count -gt 0 ]] && warn "$stale_count project(s) with no recent activity"
+    if [[ $stale_count -gt 0 ]]; then
+        warn "$stale_count project(s) with no recent activity"
+    fi
 }
 
 # Run the appropriate view
