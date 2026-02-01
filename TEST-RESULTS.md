@@ -7,8 +7,9 @@
 ## Executive Summary
 
 ✅ **PASSED:** Core functionality complete and production-ready  
-⚠️ **2 BUGS FIXED:** Azure pagination + Status display for old commits  
-🎉 **BONUS FEATURE:** Monthly review command added and tested
+🐛 **3 BUGS FIXED:** Azure pagination + Status display + PR timestamps  
+🎉 **BONUS FEATURE:** Monthly review command added and tested  
+🚀 **STATUS:** All issues resolved, ready for v0.1.0 release
 
 ---
 
@@ -64,7 +65,7 @@ _azure_api "GET" "$url" | jq '[.value[]? | {...}]'
 ### Bug #2: Status Display for Repos with Old Commits (Q2)
 
 **Severity:** Medium  
-**Status:** 🔍 DOCUMENTED (fix planned for v0.1.1)
+**Status:** ✅ FIXED in commit bc61b31
 
 **Problem:**
 - Repos with commits >7 days old show "No activity synced"
@@ -85,10 +86,46 @@ db_get_commit_stats() {
 - Show last commit date even if >7 days: "Last: 10d ago • Update OpenGraph metadata"
 - Weekly stats can still be 0: "This week: 0 commits"
 
-**Fix Recommendation:**
-1. Query last commit separately (no date filter)
-2. Keep 7-day filter only for "This week" stats
-3. Add `--window` flag for custom date ranges (7d, 30d, 90d)
+**Fix Applied:**
+1. ✅ Added `db_get_last_commit()` to query without date filter
+2. ✅ Status overview shows last activity even if >7 days old
+3. ✅ Detailed view shows recent commits from past 30 days when weekly is empty
+4. ✅ Stale warnings (⚠️) now work correctly
+
+**Commit:** `bc61b31 - fix: status display for old commits + PR/issue timestamp conversion`
+
+---
+
+### Bug #3: PR/Issue Timestamp Conversion
+
+**Severity:** Low  
+**Status:** ✅ FIXED in commit bc61b31
+
+**Problem:**
+- PRs and issues had NULL timestamps in database
+- Schema expects INTEGER (Unix epoch) but code was storing ISO strings
+- Monthly review couldn't filter PRs by date
+
+**Root Cause:**
+```bash
+# sync.sh was directly inserting ISO timestamps
+PR_CREATED=$(echo "$pr" | jq -r '.created_at')  # "2025-09-08T09:58:47Z"
+db_exec "... VALUES (..., '$PR_CREATED', ...)"  # Wrong: string in INTEGER field
+```
+
+**Fix Applied:**
+```bash
+# Convert ISO to Unix timestamp before insert
+if [[ "$PR_CREATED" =~ ^[0-9]{4}- ]]; then
+    PR_CREATED=$(date -d "$PR_CREATED" +%s)  # 1757325527
+fi
+db_exec "... VALUES (..., $PR_CREATED, ...)"  # Correct: integer
+```
+
+**Verification:**
+- ✅ PRs from github:InfantLab/brain properly timestamped
+- ✅ PRs from video-annotation-viewer properly timestamped
+- ✅ Monthly review can now filter by date (when implemented)
 
 ---
 
@@ -203,31 +240,20 @@ god review --json             # Structured output
 
 ## Known Limitations
 
-### 1. PR Timestamp Data Quality
-- **Issue:** `created_at`/`updated_at` fields often NULL in database
-- **Impact:** Low - Monthly review shows all PRs without date filtering
-- **Workaround:** Review displays current PR state for context
-- **Fix:** Pre-existing sync issue, not review feature bug
-
-### 2. OpenClaw Agent Analysis Caching
+### 1. OpenClaw Agent Analysis Caching
 - **Issue:** No automatic caching of agent-provided JSON responses
 - **Impact:** Low - Each analysis regenerates prompt (acceptable in interactive mode)
 - **Workaround:** Standalone mode (API keys) does cache responses
 - **Future:** v0.2.0 could add `god agents cache <json-file>` command
 
-### 3. Status Display for Old Commits
-- **Issue:** See Bug #2 above
-- **Impact:** Medium - Looks like sync failed when commits are >7 days old
-- **Fix:** Planned for v0.1.1
-
 ---
 
 ## Recommendations
 
-### For v0.1.1 (Bug Fixes)
-1. **Fix status display bug** - Show last commit even if >7 days old
-2. **Improve PR timestamp sync** - Populate `created_at`/`updated_at` fields
-3. **Add status --window flag** - Allow custom date ranges (7d/30d/90d)
+### For v0.1.1 (Polish & Enhancements)
+1. **Add status --window flag** - Allow custom date ranges (7d/30d/90d)
+2. **Improve error messages** - More helpful when API limits hit
+3. **Add progress indicators** - For long-running syncs
 
 ### For v0.2.0 (Enhancements)
 4. **Monthly review analysis** - `god review --analyze` for LLM insights
@@ -249,12 +275,13 @@ god review --json             # Structured output
 ✅ All core features working  
 ✅ Multi-provider tested (GitHub + Azure DevOps)  
 ✅ Documentation complete (SKILL.md, examples)  
-✅ Bugs fixed and pushed to main  
+✅ All bugs fixed and pushed to main  
 ✅ User validation completed (Q1-Q5)  
 ✅ Performance acceptable (<5s for status)  
 ✅ Error handling graceful  
 ✅ Logging comprehensive  
-✅ Git history clean (meaningful commits)
+✅ Git history clean (meaningful commits)  
+✅ No known blockers
 
 **Status:** ✅ READY FOR PRODUCTION
 
@@ -264,15 +291,15 @@ god review --json             # Structured output
 
 **god-mode v0.1.0 is production-ready** with:
 - ✅ All planned features working
-- ✅ 2 bugs found and fixed during testing
+- ✅ 3 bugs found and fixed during testing
 - 🎉 1 bonus feature added (monthly review)
-- ⚠️ 1 known display issue documented for v0.1.1
+- 🚀 Zero known blockers
 
 **Recommended Actions:**
 1. ✅ Publish to ClawdHub as community skill
 2. ✅ Announce to OpenClaw community
-3. 📝 Create v0.1.1 milestone for status display fix
-4. 🎯 Gather user feedback for v0.2.0 planning
+3. 🎯 Gather user feedback for v0.2.0 planning
+4. 📝 Consider v0.1.1 for polish improvements
 
 ---
 
