@@ -1,85 +1,100 @@
 ---
 name: god-mode
-description: Developer oversight and AI agent coaching. Use when viewing project status across repos, syncing GitHub data, or analyzing agents.md against commit patterns.
+description: Developer project oversight via conversation. User asks "what's happening across my repos?" or "analyze my agents.md" - you run god status/sync/agents commands and translate results conversationally. LLM-powered agent coaching based on commit patterns.
 metadata: {"openclaw": {"requires": {"bins": ["gh", "sqlite3", "jq"]}}}
 user-invocable: true
 ---
 
 # god-mode Skill
 
-> Developer oversight and AI agent coaching for OpenClaw.
+> **Conversational project oversight and AI agent coaching for OpenClaw.**
 
 ## Overview
 
-**god-mode** gives you a bird's-eye view of all your coding projects and coaches you to write better AI agent instructions.
+**god-mode** lets users ask about their projects in plain English. You run the commands and explain the results conversationally.
 
-**Key features:**
-- Multi-project status dashboard (GitHub + Azure DevOps)
-- Incremental sync with SQLite cache for fast queries
+**What users can ask:**
+- "Set up god-mode for my repos"
+- "What's happening across my projects?"
+- "Which repos need attention?"
+- "Analyze my agents.md"
+- "What should I work on today?"
+
+**What you provide:**
+- Multi-project status summaries (GitHub + Azure DevOps)
+- Plain-English explanations of commit activity, PRs, issues
 - LLM-powered agent instruction analysis
-- Activity logging for transparency
+- Recommendations for improving their AGENTS.md
 
 **Perfect for:**
-- Developers juggling multiple repos
+- Developers juggling multiple repos who want conversational oversight
 - Teams using AI coding assistants (Claude, Copilot, etc.)
-- Anyone who wants better AGENTS.md based on actual commit patterns
+- Anyone who wants data-driven improvements to their AGENTS.md
 
 ## Getting Started
 
-### Prerequisites
+### For OpenClaw Users (Conversational)
 
-1. **GitHub CLI** - `gh` must be installed and authenticated
-   ```bash
-   gh auth login  # If not already logged in
-   ```
+**Just tell me what you want!** I'll run the god-mode commands for you.
 
-2. **Your repositories** - At least one repo with commit history
+**Example conversations:**
 
-3. **(Optional) AGENTS.md** - For agent analysis feature
+> **You:** "Set up god-mode for my tada repository"
+>
+> **Me:** Sure! I'll set up god-mode and add your tada repo.
+> *[runs `god setup` and `god projects add github:YourUsername/tada`]*
+> Done! Your repo is configured. Want me to sync the data?
 
-### First-Time Setup
+> **You:** "Yes, and show me what's happening"
+>
+> **Me:** *[runs `god sync` and `god status`]*
+> 
+> Here's your overview:
+> - **tada**: 30 commits this week, last activity 3 days ago
+> - 0 open PRs, 0 issues
+>
+> Your most active project! Commits are all features and bug fixes.
+
+> **You:** "Analyze my agents.md for tada"
+>
+> **Me:** *[runs `god agents analyze github:YourUsername/tada`]*
+>
+> I've analyzed your AGENTS.md against 155 commits. Here's what I found:
+>
+> **GAPS:**
+> - Testing practices (high impact) - 68 bug fixes but no testing guidance
+> - Voice API debugging - 12 commits mention "voice" but no troubleshooting
+>
+> **STRENGTHS:**
+> - TypeScript strictness is working - zero type-related fixes
+>
+> Want me to add testing guidance to your AGENTS.md?
+
+**What you can ask me:**
+- "Set up god-mode for [repo]"
+- "Show me all my projects"
+- "What's happening across my repos?"
+- "Analyze my agents.md"
+- "Which repos need attention?"
+- "What should I work on today?"
+
+I'll handle all the commands and explain the results in plain English.
+
+### For CLI Users (Direct Commands)
+
+If you prefer running commands yourself:
 
 ```bash
-# Run setup (checks dependencies, creates directories)
+# Setup
 god setup
 
-# Add your first project (replace with your repo)
-god projects add github:yourusername/yourrepo
+# Add a project
+god projects add github:username/repo
 
-# Sync data (fetches commits, PRs, issues)
+# Sync and view
 god sync
-
-# See your project status
 god status
 ```
-
-**Expected output:**
-```
-🔭 god-mode
-
-github:yourusername/yourrepo
-  Last: 2h ago • feat: add new feature
-  This week: 15 commits • 2 PRs • 3 issues
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-This week: 15 commits • 2 open PRs
-```
-
-### Using in OpenClaw
-
-When running god-mode commands in OpenClaw, I (your OpenClaw agent) can:
-- Help you set up projects
-- Explain the analysis results
-- Provide the LLM analysis for `god agents analyze`
-- Guide you through applying recommendations
-
-**Typical workflow in OpenClaw:**
-1. You: "Set up god-mode for my tada repo"
-2. Me: Runs `god projects add github:InfantLab/tada` and `god sync`
-3. You: "Analyze my agents.md"
-4. Me: Runs `god agents analyze`, shows you the prompt, provides JSON analysis
-5. You: Decide which recommendations to apply
-6. Me: Helps apply them to your AGENTS.md
 
 ## Commands
 
@@ -273,9 +288,58 @@ god status
 # Identify projects needing attention
 ```
 
-## Agent Workflows
+## Agent Guide (For OpenClaw Agents)
 
-### Daily Briefing (Heartbeat)
+**When the user asks about their projects, here's what to do:**
+
+### "Set up god-mode" / "Track my [repo]"
+1. Run `god setup` (checks dependencies)
+2. Run `god projects add github:username/repo`
+3. Run `god sync` to fetch data
+4. Summarize what you found
+
+### "Show me my projects" / "What's happening?"
+1. Run `god status`
+2. Translate output to conversational summary:
+   - "Your most active repo is X with Y commits this week"
+   - "Z repo hasn't had activity in N days"
+   - "You have M open PRs across all projects"
+
+### "Analyze my agents.md"
+1. Run `god agents analyze github:username/repo`
+2. You'll receive the analysis prompt with:
+   - Their complete AGENTS.md
+   - Commit pattern analysis (155 commits, 68 bug fixes, etc.)
+   - Pain points and frequently changed files
+3. **Provide JSON analysis** in this format:
+   ```json
+   {
+     "gaps": [
+       {"area": "Testing", "observation": "68 bug fixes but no test guidance", "impact": "high", "suggestion": "Add testing section"}
+     ],
+     "strengths": [
+       {"area": "TypeScript", "observation": "Zero type errors in 155 commits"}
+     ],
+     "recommendations": [
+       {"priority": 1, "section": "## Testing", "content": "- Write unit tests for new code\n- Run tests before commits"}
+     ],
+     "summary": "Strong TypeScript practices, needs testing guidance"
+   }
+   ```
+4. Summarize the analysis conversationally
+5. Offer to apply recommendations
+
+### "Which repos need attention?"
+1. Run `god status`
+2. Look for:
+   - Stale PRs (>3 days old)
+   - No activity in >5 days
+   - Open issues piling up
+3. Suggest what to focus on
+
+### Automated Workflows
+
+**Daily Briefing (Heartbeat):**
 ```markdown
 # HEARTBEAT.md
 - Run `god status` and summarize:
@@ -284,9 +348,8 @@ god status
   - Open PRs needing review
 ```
 
-### Agent Analysis (Cron)
+**Weekly Analysis (Cron):**
 ```yaml
-# Weekly agent instruction review
 schedule: "0 9 * * 1"  # Monday 9am
 task: |
   Run `god agents analyze` on high-priority projects.
@@ -295,23 +358,31 @@ task: |
 
 ## Common Questions
 
-### How do I know if god-mode is working?
-Run `god status` - if you see project data, it's working! If you see "No projects configured", run `god projects add github:your/repo` first.
+### How do I use god-mode?
+**In OpenClaw:** Just ask me! "Show me my projects", "Analyze my agents.md", etc. I'll run the commands and explain the results.
 
-### Do I need an API key to use god agents analyze?
-No! When running in OpenClaw, the analysis prompt is shown to your OpenClaw agent (me), and I provide the analysis. No separate API key needed.
+**CLI:** Run commands directly: `god status`, `god sync`, `god agents analyze`
 
-### Can I use this outside OpenClaw?
-Yes! god-mode works standalone. Just set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` for automated LLM analysis, or use it without API keys to get the analysis prompt only.
+### Do I need to set up anything first?
+**First time:** Tell me to "set up god-mode for [your repo]" and I'll handle it. Or run `god setup` and `god projects add github:your/repo` yourself.
 
-### How often should I sync?
-Run `god sync` when you want fresh data. The first sync fetches 90 days of commits. Subsequent syncs are incremental (only new data).
+**Authentication:** Make sure `gh auth login` is done (GitHub CLI authentication).
 
-### What gets stored locally?
-Everything! Commits, PRs, issues, and analysis results are cached in `~/.god-mode/cache.db`. Activity logs in `~/.god-mode/logs/activity.log`. Nothing is sent to external servers (except the LLM API call if you use one).
+### Do I need an API key?
+**No!** When you ask me to analyze your agents.md, I receive the analysis prompt and provide the JSON response directly. No separate API key needed.
 
-### Can I use this for private repos?
-Yes! god-mode uses your `gh` CLI authentication, so it has access to whatever your GitHub account can access.
+**Standalone:** If using god-mode outside OpenClaw, you can set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` for automated analysis.
+
+### How often does it sync data?
+**When you ask:** I run `god sync` when you ask about your projects. First sync fetches 90 days of history. Subsequent syncs are incremental (only new data).
+
+**Manual:** You can run `god sync` anytime, or `god sync --force` for a full refresh.
+
+### What data gets stored?
+**Locally only:** Commits, PRs, issues, and analysis results in `~/.god-mode/cache.db`. Activity logs in `~/.god-mode/logs/activity.log`. Nothing sent to external servers (except when calling LLM APIs if configured).
+
+### Does it work with private repos?
+**Yes!** Uses your `gh` CLI authentication, so it has access to whatever your GitHub account can access.
 
 ## Troubleshooting
 
