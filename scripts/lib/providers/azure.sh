@@ -100,7 +100,7 @@ azure_list_repos() {
     echo "$all_repos"
 }
 
-# Fetch commits for a repo
+# Fetch commits for a repo (with pagination)
 # Usage: azure_fetch_commits "org/project/repo" [since_date]
 azure_fetch_commits() {
     local repo="$1"
@@ -108,20 +108,53 @@ azure_fetch_commits() {
     
     read -r org project repo_name <<< "$(_azure_parse_repo "$repo")"
     
-    local url="https://dev.azure.com/${org}/${project}/_apis/git/repositories/${repo_name}/commits?api-version=7.1"
-    [[ -n "$since" ]] && url="${url}&searchCriteria.fromDate=${since}"
+    local base_url="https://dev.azure.com/${org}/${project}/_apis/git/repositories/${repo_name}/commits?api-version=7.1"
+    [[ -n "$since" ]] && base_url="${base_url}&searchCriteria.fromDate=${since}"
     
-    _azure_api "GET" "$url" | jq '[.value[]? | {
-        sha: .commitId,
-        author: .author.name,
-        author_email: .author.email,
-        message: .comment,
-        date: .author.date,
-        files_changed: (.changeCounts.Edit // 0)
-    }]' 2>/dev/null || echo "[]"
+    local all_commits="[]"
+    local skip=0
+    local page_size=100
+    local has_more=true
+    
+    # Pagination loop (Azure uses $top and $skip)
+    while [[ "$has_more" == "true" ]]; do
+        local url="${base_url}&\$top=${page_size}&\$skip=${skip}"
+        local response
+        response=$(_azure_api "GET" "$url")
+        
+        local commits
+        commits=$(echo "$response" | jq '[.value[]? | {
+            sha: .commitId,
+            author: .author.name,
+            author_email: .author.email,
+            message: .comment,
+            date: .author.date,
+            files_changed: (.changeCounts.Edit // 0)
+        }]' 2>/dev/null || echo "[]")
+        
+        local count=$(echo "$commits" | jq 'length')
+        
+        # Append to results
+        if [[ "$count" -gt 0 ]]; then
+            all_commits=$(echo "$all_commits" | jq --argjson new "$commits" '. + $new' 2>/dev/null || echo "[]")
+            skip=$((skip + page_size))
+        fi
+        
+        # Check if there are more pages
+        if [[ "$count" -lt "$page_size" ]]; then
+            has_more=false
+        fi
+        
+        # Safety: max 10 pages (1000 commits)
+        if [[ $skip -ge 1000 ]]; then
+            has_more=false
+        fi
+    done
+    
+    echo "$all_commits"
 }
 
-# Fetch pull requests
+# Fetch pull requests (with pagination)
 # Usage: azure_fetch_prs "org/project/repo" [state]
 # state: active, completed, abandoned, all (default: all)
 azure_fetch_prs() {
@@ -130,27 +163,60 @@ azure_fetch_prs() {
     
     read -r org project repo_name <<< "$(_azure_parse_repo "$repo")"
     
-    local url="https://dev.azure.com/${org}/${project}/_apis/git/repositories/${repo_name}/pullrequests?api-version=7.1"
+    local base_url="https://dev.azure.com/${org}/${project}/_apis/git/repositories/${repo_name}/pullrequests?api-version=7.1"
     
     # Map state parameter
     case "$state" in
-        open) url="${url}&searchCriteria.status=active" ;;
-        closed) url="${url}&searchCriteria.status=completed" ;;
-        all) url="${url}&searchCriteria.status=all" ;;
+        open) base_url="${base_url}&searchCriteria.status=active" ;;
+        closed) base_url="${base_url}&searchCriteria.status=completed" ;;
+        all) base_url="${base_url}&searchCriteria.status=all" ;;
     esac
     
-    _azure_api "GET" "$url" | jq --arg repo_id "azure:${org}/${project}/${repo_name}" '[.value[]? | {
-        id: ($repo_id + ":" + (.pullRequestId | tostring)),
-        number: .pullRequestId,
-        title: .title,
-        state: .status,
-        author: .createdBy.displayName,
-        created_at: .creationDate,
-        updated_at: (.closedDate // .creationDate),
-        merged_at: (if .status == "completed" then .closedDate else null end),
-        reviewers: [.reviewers[]? | .displayName],
-        labels: []
-    }]' 2>/dev/null || echo "[]"
+    local all_prs="[]"
+    local skip=0
+    local page_size=100
+    local has_more=true
+    
+    # Pagination loop
+    while [[ "$has_more" == "true" ]]; do
+        local url="${base_url}&\$top=${page_size}&\$skip=${skip}"
+        local response
+        response=$(_azure_api "GET" "$url")
+        
+        local prs
+        prs=$(echo "$response" | jq --arg repo_id "azure:${org}/${project}/${repo_name}" '[.value[]? | {
+            id: ($repo_id + ":" + (.pullRequestId | tostring)),
+            number: .pullRequestId,
+            title: .title,
+            state: .status,
+            author: .createdBy.displayName,
+            created_at: .creationDate,
+            updated_at: (.closedDate // .creationDate),
+            merged_at: (if .status == "completed" then .closedDate else null end),
+            reviewers: [.reviewers[]? | .displayName],
+            labels: []
+        }]' 2>/dev/null || echo "[]")
+        
+        local count=$(echo "$prs" | jq 'length')
+        
+        # Append to results
+        if [[ "$count" -gt 0 ]]; then
+            all_prs=$(echo "$all_prs" | jq --argjson new "$prs" '. + $new' 2>/dev/null || echo "[]")
+            skip=$((skip + page_size))
+        fi
+        
+        # Check if there are more pages
+        if [[ "$count" -lt "$page_size" ]]; then
+            has_more=false
+        fi
+        
+        # Safety: max 5 pages (500 PRs)
+        if [[ $skip -ge 500 ]]; then
+            has_more=false
+        fi
+    done
+    
+    echo "$all_prs"
 }
 
 # Fetch work items (issues)
