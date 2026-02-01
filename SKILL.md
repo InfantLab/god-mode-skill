@@ -1,6 +1,6 @@
 ---
 name: god-mode
-description: Developer project oversight via conversation. User asks "what's happening across my repos?" or "analyze my agents.md" - you run god status/sync/agents commands and translate results conversationally. LLM-powered agent coaching based on commit patterns.
+description: God's eye view of your dev repos. Multi-project tracking across GitHub/Azure DevOps. AI learns from your commits to upgrade your agents.md.
 metadata: {"openclaw": {"requires": {"bins": ["gh", "sqlite3", "jq"]}}}
 user-invocable: true
 ---

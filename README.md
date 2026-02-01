@@ -1,6 +1,6 @@
 # god-mode
 
-> 🔭 Bird's-eye view of your coding projects. 🧠 AI agent coaching based on your actual work.
+> 🔭 God's eye view of your dev repos. Multi-project tracking across GitHub/Azure DevOps. AI learns from your commits to upgrade your agents.md.
 
 [![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-blue)](https://clawdhub.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
