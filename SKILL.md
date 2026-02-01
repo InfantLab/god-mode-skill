@@ -121,6 +121,39 @@ god projects add github:user/repo   # Add project
 god projects remove myproject       # Remove project
 ```
 
+### `god review [--month YYYY-MM]`
+Generate monthly activity reviews:
+```bash
+god review                  # Last month's activity
+god review --month 2026-01  # Specific month
+god review --json           # JSON output
+```
+
+**What it shows:**
+- Total commits across all projects
+- Most active repositories
+- Pull request activity (merged, active, closed)
+- Detailed breakdown by project with date ranges
+- Perfect for monthly retrospectives and planning
+
+**Example output:**
+```
+Monthly Review: 2026-01
+  📊 286 commits across 7 projects
+  👥 10 unique contributors
+  
+Most Active Projects:
+  tada - 155 commits
+  ContentEngine - 63 commits
+  brain - 27 commits
+```
+
+**Use cases:**
+- Monthly team stand-ups
+- Personal retrospectives ("What did I actually work on?")
+- Quarterly planning ("Which projects got attention?")
+- Automated monthly summaries via cron
+
 ### `god agents analyze <project>`
 Analyze agents.md against commit history using LLM:
 ```bash
@@ -346,6 +379,23 @@ god status
   - Projects with stale PRs (>3 days)
   - Projects with no activity (>5 days)
   - Open PRs needing review
+```
+
+**Monthly Review (Cron - 1st of month):**
+```yaml
+schedule:
+  kind: cron
+  expr: "0 9 1 * *"  # 9am on 1st of each month
+  tz: "America/New_York"
+payload:
+  kind: agentTurn
+  message: |
+    Run god review for last month and summarize:
+    - Which projects were most active?
+    - Any projects that went quiet?
+    - Major accomplishments from commit messages
+    - Recommendations for next month
+sessionTarget: isolated
 ```
 
 **Weekly Analysis (Cron):**
