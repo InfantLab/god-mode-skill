@@ -1,5 +1,16 @@
 # god-mode
 
+> ⚠️ **Archived (March 2026)** — This project is no longer actively maintained.
+>
+> The agent orchestration space has matured significantly. For active alternatives, see:
+> - [agent-orchestrator](https://github.com/ComposioHQ/agent-orchestrator) — parallel agents, CI fixes, PR reviews
+> - [ai-maestro](https://github.com/23blocks-OS/ai-maestro) — multi-machine agent dashboard
+> - [awesome-agent-orchestrators](https://github.com/andyrewlee/awesome-agent-orchestrators) — curated list
+>
+> For simple repo status tracking, the `gh` CLI does the job.
+
+---
+
 > 🔭 God's eye view of your dev repos. Multi-project tracking across GitHub/Azure DevOps. AI learns from your commits to upgrade your agents.md.
 
 [![ClawHub](https://img.shields.io/badge/ClawHub-v0.1.0-blue)](https://www.clawhub.ai/InfantLab/god-mode)
